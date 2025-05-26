@@ -1,0 +1,14 @@
+{
+  "RESTAURANT_OWNER": {
+    "describe": "full-access"
+  },
+  "WAITER": {
+    "describe": "limit-access"
+  },
+  "CASHIER": {
+    "describe": "limit-access"
+  },
+  "CHEF": {
+    "describe": "limit-access"
+  }
+}

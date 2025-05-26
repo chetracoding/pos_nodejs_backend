@@ -1,0 +1,140 @@
+##############################
+###### PREPARE PIPELINE ######
+##############################
+
+# snippet reference for qualite rules
+.tpl:qualite-rules:
+  rules:
+    # only if not main branch and has tag matching qualite tags like v1.0.0-rc.001
+    - if: $CI_COMMIT_TAG && $CI_COMMIT_TAG =~ /^v\d+\.\d+\.\d+-rc\.\d+$/
+
+# template for pre builds stages
+.tpl:pre-build:
+  variables:
+    GIT_STRATEGY: none
+  script:
+    # export to project sensitive variables to kaniko ENV
+    - export AX_DATABASE_PASSWORD=$(echo "$AX_DATABASE_PASSWORD_BASE64" | base64 -d)
+    - export AX_AUTH_TOKEN_SALT=$(echo "$AX_AUTH_TOKEN_SALT_BASE64" | base64 -d)
+    # Replace variables in app config file and store it in cache folder (share between jobs)
+    - (echo "cat <<EOF" ; cat "$AX_NODE_CONFIG_FILE"; ) | sh > node_env_config.json
+  artifacts:
+    paths: ['node_env_config.json']
+    expire_in: "5" # 5 seconds
+
+# template for kaniko builds stages
+.tpl:kaniko-build:
+  image:
+    # For latest releases see https://github.com/GoogleContainerTools/kaniko/releases
+    # Only debug/*-debug versions of the Kaniko image are known to work within Gitlab CI
+    name: gcr.io/kaniko-project/executor:debug
+    entrypoint: [""]
+  variables:
+    # Additional options for Kaniko executor.
+    # For more details see https://github.com/GoogleContainerTools/kaniko/blob/master/README.md#additional-flags
+    KANIKO_ARGS: ""
+    KANIKO_BUILD_CONTEXT: $CI_PROJECT_DIR
+  script:
+    - mkdir -p /kaniko/.docker
+    # Replace variables in app config file
+    - mv node_env_config.json "$KANIKO_BUILD_CONTEXT/config/config.json"
+    # Write credentials to access Gitlab Container Registry within the runner/ci
+    - echo "{\"auths\":{\"${CI_REGISTRY}\":{\"auth\":\"$(echo -n ${CI_REGISTRY_USER}:${CI_REGISTRY_PASSWORD} | base64 | tr -d '\n')\"}}}" > /kaniko/.docker/config.json
+    - >-
+      /kaniko/executor
+      --context "${KANIKO_BUILD_CONTEXT}"
+      --dockerfile "${KANIKO_BUILD_CONTEXT}/Dockerfile"
+      --destination "$CI_REGISTRY_IMAGE:$CI_COMMIT_TAG"
+      --build-arg NPM_AUTH_TOKEN=${CI_JOB_TOKEN}
+       ${KANIKO_ARGS}
+
+# template for deploy stages
+.tpl:deploy:
+  variables:
+    GIT_STRATEGY: none
+  script:
+    ## [local]  = local instance change
+    ## [remote] = remote instance change
+    #
+    # [local] install openssh and docker-cli
+    - apk upgrade && apk add --no-cache openssh docker openrc
+    # [local] prepare ssh key for connection to server
+    - mkdir -p ~/.ssh
+    - echo "$AX_DEPLOY_KEY_BASE64" | base64 -d > ~/.ssh/id_ed25519
+    - chmod 600 ~/.ssh/id_ed25519
+    - ssh-keyscan -p $AX_DEPLOY_PORT -t ed25519 $AX_DEPLOY_HOST > ~/.ssh/known_hosts
+    # [local] create docker context for deployment
+    - docker context create remote --docker host=ssh://deploy@$AX_DEPLOY_HOST
+    - docker context use remote
+    # [remote] login docker to container registry
+    - echo $CI_REGISTRY_PASSWORD | docker login -u $CI_REGISTRY_USER --password-stdin $CI_REGISTRY
+    # [remote] pull new docker image
+    - docker pull $CI_REGISTRY_IMAGE:$CI_COMMIT_TAG
+    # [remote] logout docker from container registry
+    - docker logout
+    # [remote] find new port for new container
+    - export NEW_PORT=$(ssh -p $AX_DEPLOY_PORT deploy@$AX_DEPLOY_HOST 'comm -23 <(seq 10000 20000) <(ss -tan | awk '\''{print $4}'\'' | cut -d'\'':'\'' -f2 | grep '\''[0-9]\{1,5\}'\'' | sort | uniq) | shuf | head -n 1')
+    # [remote] start new version container with tmp name and new port
+    - docker run -d -p $NEW_PORT:$AX_NODE_PORT --restart always --name tmp-$CI_PROJECT_PATH_SLUG $CI_REGISTRY_IMAGE:$CI_COMMIT_TAG
+    # [remote] redirect to new container by changing nginx upstream port
+    - >
+        ssh -p $AX_DEPLOY_PORT deploy@$AX_DEPLOY_HOST "
+        echo 'server 172.17.0.1:$NEW_PORT weight=5;' > /etc/nginx/snippets/$CI_PROJECT_PATH_SLUG-upstream.conf
+        && sudo /bin/systemctl reload nginx.service"
+    # [remote] store old container id
+    - export OLD_IMG_NAME=$(docker inspect --format='{{.Config.Image}}' $CI_PROJECT_PATH_SLUG)
+    - export OLD_IMG_ID=$(docker images --filter=reference="$OLD_IMG_NAME" --format "{{.ID}}")
+    # [remote] stop and remove old container and image
+    - docker stop $CI_PROJECT_PATH_SLUG | xargs docker rm
+    - docker rmi $OLD_IMG_ID
+    # [remote] rename new container 
+    - docker rename tmp-$CI_PROJECT_PATH_SLUG $CI_PROJECT_PATH_SLUG
+    # [local] exit gitlab-runner container 
+    - exit
+  rules: !reference [".tpl:qualite-rules", rules]
+
+######################################
+###### PIPELINE : STAGES ######
+######################################
+stages:
+  - build
+  - deploy
+
+######################################
+###### PIPELINE : PREPARE BUILD ######
+######################################
+
+pre-build:qualite:
+  extends: ".tpl:pre-build"
+  stage: .pre
+  environment:
+    name: qualite
+  rules: !reference [".tpl:qualite-rules", rules]
+
+####################################
+###### PIPELINE : BUILD IMAGE ######
+####################################
+
+kaniko-build:qualite:
+  extends: ".tpl:kaniko-build"
+  stage: build
+  needs:
+    - job: "pre-build:qualite"
+      optional: false
+  rules: !reference [".tpl:qualite-rules", rules]
+
+#####################################
+###### PIPELINE : DEPLOY IMAGE ######
+#####################################
+
+deploy:qualite:
+  extends: ".tpl:deploy"
+  stage: deploy
+  before_script: 
+    - export AX_DEPLOY_KEY_BASE64="$AX_QUALITE_SEVE_DEPLOY_KEY_BASE64"
+    - export AX_DEPLOY_HOST="$AX_QUALITE_SEVE_DEPLOY_HOST"
+    - export AX_DEPLOY_PORT="$AX_QUALITE_SEVE_DEPLOY_PORT"
+  needs:
+    - job: "kaniko-build:qualite"
+      optional: false
+  rules: !reference [".tpl:qualite-rules", rules]

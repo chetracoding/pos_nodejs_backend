@@ -1,0 +1,97 @@
+{
+  "active": true,
+  "tables": {
+    "roles": {
+      "users": {
+        "admin": "ALL"
+      },
+      "rules": {
+        "name": {
+          "notEmpty": true,
+          "isLength": {
+            "options": {
+              "max": 20,
+              "min": 1
+            }
+          }
+        },
+        "disabled": {
+          "notEmpty": false,
+          "toBoolean": true,
+          "isBoolean": true
+        }
+      }
+    },
+    "stores": {
+      "users": {
+        "admin": "ALL"
+      },
+      "rules": {
+        "name": {
+          "notEmpty": true,
+          "isLength": {
+            "options": {
+              "max": 250,
+              "min": 1
+            }
+          }
+        },
+        "street": {
+          "notEmpty": true,
+          "isLength": {
+            "options": {
+              "max": 250,
+              "min": 1
+            }
+          }
+        },
+        "city": {
+          "notEmpty": true,
+          "isLength": {
+            "options": {
+              "max": 250,
+              "min": 1
+            }
+          }
+        },
+        "disabled": {
+          "notEmpty": false,
+          "toBoolean": true,
+          "isBoolean": true
+        }
+      }
+    },
+    "tables": {
+      "users": {
+        "admin": "ALL"
+      },
+      "rules": {
+        "table_number": {
+          "notEmpty": true,
+          "isLength": {
+            "options": {
+              "max": 20,
+              "min": 1
+            }
+          }
+        }
+      }
+    },
+    "categories": {
+      "users": {
+        "admin": "ALL"
+      },
+      "rules": {
+        "name": {
+          "notEmpty": true,
+          "isLength": {
+            "options": {
+              "max": 20,
+              "min": 1
+            }
+          }
+        }
+      }
+    }
+  }
+}
