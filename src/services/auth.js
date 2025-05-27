@@ -1,7 +1,7 @@
 import models from '../models/index.js'
 import Jwt from 'jsonwebtoken'
 import bcrypt from 'bcryptjs'
-import transporter from '../common/mailer/index.js'
+import { mailTransporter } from '../utils/mailer.js'
 import { validRole } from '../utils/role.js'
 import { snakeToCamel, getDefinedValues } from '../helpers/index.js'
 const { user, roles } = models
@@ -120,6 +120,7 @@ async function sendPwd(req, res) {
   const resUser = await user.findOne({ email: email })
   if (!resUser)
     return res.status(404).send({ success: false, message: 'Invalid email.' })
+
   try {
     const token = Jwt.sign(
       {
@@ -127,23 +128,32 @@ async function sendPwd(req, res) {
       },
       'EMAIL-KEY',
       {
-        expiresIn: '5min',
+        expiresIn: '20min',
       }
     )
+    const restLink = `${process.env.APP_FRONTEND_URL}/reset_password/${token}`
     const mailOptions = {
-      from: 'hongchetra12@gmail.com',
+      from: `"POS System" <${process.env.MAIL_ADDRESS_FROM}>`,
       to: email,
-      subject: 'Booking Now | Recover Password Account',
+      subject: 'Reset Password Account',
       html: `
-      <p>Please reset a new password for account <span style="font-weight: bold; text-decoration: none;">${email}</span>.</p>
-      <button style="background: #F25657; border: none; border-radius: 10px; padding: 8px 16px;"><a style="text-decoration: none; color:white;" href="${process.env.CORE_URL}/reset_password/${token}">Reset Password</a></button>
-      <br>
-      <p>Thanks for using Booking Now.</p>
-      <p>Sincerely yours,</p>
-      <p style="font-weight: bold;">Booking Now</p>
+      <p>Dear <strong>${resUser.first_name} ${resUser.last_name}</strong>,</p>
+
+      <p>We received a request to reset your password. Please click the link below to proceed with resetting your password:</p>
+
+      <p>Reset password link: <strong><a href="${restLink}">click here</a></strong></p>
+
+      <p>If you did not request this, please ignore this email.</p>
+
+      <p>For security reasons, do not share this link with anyone.</p>
+
+      <p>Best regards,</p>
+      <p><strong>POS System</strong></p>
+      <p>supports@pos.com</p>
       `,
     }
-    await transporter.sendMail(mailOptions)
+
+    await mailTransporter.sendMail(mailOptions)
     res.send({ success: true, message: 'Send email successful.' })
   } catch (error) {
     res

@@ -6,8 +6,8 @@ import initCrud from './crud/index.js'
 import { Server } from 'socket.io'
 
 const server = http.createServer(app)
-const io = new Server(server, { cors: { origin: process.env.CORE_URL } })
-const PORT = process.env.PORT || 5000
+const io = new Server(server, { cors: { origin: process.env.APP_CORES_ORIGIN } })
+const PORT = process.env.APP_PORT || 5000
 
 io.on('connection', (socket) => {
   console.log(`- A socket client ID:${socket.id} is connected`)

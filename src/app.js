@@ -4,7 +4,7 @@ import dotenv from 'dotenv'
 
 dotenv.config()
 const app = express()
-app.use(cors({ origin: process.env.CORE_URL }))
+app.use(cors({ origin: process.env.APP_CORES_ORIGIN }))
 app.use(express.json())
 app.use(express.urlencoded({ extended: true }))
 
