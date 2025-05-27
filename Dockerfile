@@ -1,19 +1,20 @@
-FROM node:18.12.0
+# Use official Node.js LTS image
+FROM node:18
 
-EXPOSE 5000
+# Set working directory
+WORKDIR /usr/src/app
 
-RUN mkdir -p /home/app
+# Copy package.json and package-lock.json
+COPY package*.json ./
 
-WORKDIR /home/app
+# Install dependencies
+RUN npm install
 
-COPY . /home/app
+# Copy application source code
+COPY . .
 
-# remove husky install by removing prepare script & install dependencies
-RUN npm pkg delete scripts.prepare && npm i
+# Expose application port
+EXPOSE 5002
 
-# install globaly required module for migrations
-RUN npm i -g sequelize-cli
-
-RUN chmod +x startup.sh
-
-ENTRYPOINT [ "./startup.sh" ]
+# Start the Node.js server
+CMD ["npm", "start"]

@@ -1,15 +1,13 @@
 version: "3.8"
 
 services:
-  app:
-    build:
-      context: .
-      dockerfile: Dockerfile
-    container_name: pos-nodejs-backend-app
+  node-app:
+    build: .
+    container_name: pos-nodejs-app
     ports:
-      - "5000:5000"
+      - "5002:5002"
     volumes:
-      - .:/home/app
-    working_dir: /home/app
+      - .:/usr/src/app
+      - /usr/src/app/node_modules
     environment:
-      - NODE_ENV=production
+      - NODE_ENV=development
