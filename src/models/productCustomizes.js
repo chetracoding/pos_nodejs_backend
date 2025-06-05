@@ -14,6 +14,10 @@ const ProductCustomizeScema = {
     type: Schema.Types.ObjectId,
     ref: 'products',
   },
+  disabled: {
+    type: Boolean,
+    default: false,
+  },
 }
 
 const ProductCustomize = model(

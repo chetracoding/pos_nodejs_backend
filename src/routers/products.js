@@ -11,6 +11,7 @@ export default function initRoutes() {
     ensurePermissions({ RESTAURANT_OWNER: 'GET', WAITER: 'GET' }),
     productService.getAll
   )
+
   router.get(
     '/:id',
     ensurePermissions({ RESTAURANT_OWNER: 'GET', WAITER: 'GET' }),
@@ -27,6 +28,7 @@ export default function initRoutes() {
     ),
     productService.getById
   )
+
   router.post(
     '/',
     ensurePermissions({ RESTAURANT_OWNER: 'POST' }),
@@ -78,6 +80,7 @@ export default function initRoutes() {
     ),
     productService.create
   )
+
   router.put(
     '/:id',
     ensurePermissions({ RESTAURANT_OWNER: 'PUT' }),
@@ -140,6 +143,7 @@ export default function initRoutes() {
     ),
     productService.update
   )
+
   router.delete(
     '/:id',
     ensurePermissions({ RESTAURANT_OWNER: 'DELETE' }),
