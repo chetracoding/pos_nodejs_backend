@@ -19,6 +19,7 @@ async function filter(req, res) {
   if (req.query.is_paid) {
     options.is_paid = req.query.is_paid == 'true' ? true : false
   }
+
   const resData = await Order.find(options)
     .populate({ path: 'table_id order_details', select: '_id table_number' })
     .populate({ path: 'store_id', select: '_id name' })
@@ -29,18 +30,16 @@ async function filter(req, res) {
         path: 'product_customize_id',
         select: '-createdAt -updatedAt',
         populate: {
-          path: 'product_id',
-          select: '-product_customizes -store_id -createdAt -updatedAt',
+          path: 'product',
+          select: '-product_customizes -store -createdAt -updatedAt',
         },
       },
     })
     .sort({ createdAt: -1 })
+
   res.send({
     success: true,
-    message:
-      Object.keys(options).length > 1
-        ? 'Filter all orders successful.'
-        : 'Get all orders successful.',
+    message: 'Get all orders successful.',
     data: resData,
   })
 }

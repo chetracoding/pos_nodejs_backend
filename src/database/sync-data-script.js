@@ -3,6 +3,8 @@ import dotenv from 'dotenv'
 import initDb from '../../mongodb/index.js'
 import { insertRolePermissions } from './role-permissions-seed.js'
 import { insertUsers } from './user-seed.js'
+import { insertCategoriesAndTables } from './category-table-seed.js'
+import { insertProducts } from './product-seed.js'
 
 dotenv.config()
 
@@ -13,7 +15,9 @@ export async function syncData() {
     await clearCollections()
 
     await insertRolePermissions()
-    await insertUsers()
+    const { store1 } = await insertUsers()
+    const { categories } = await insertCategoriesAndTables(store1._id)
+    await insertProducts(store1._id, categories)
 
     await mongoose.disconnect()
   } catch (error) {

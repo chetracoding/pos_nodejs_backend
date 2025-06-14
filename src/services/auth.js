@@ -81,7 +81,7 @@ async function login(req, res) {
     const { email, password } = req.body
     const user = await User.findOne({ email: email }).select('+password')
 
-    if (!user && !(await bcrypt.compare(password, user.password))) {
+    if (!user || (user && !(await bcrypt.compare(password, user.password)))) {
       return res
         .status(404)
         .send({ success: false, message: 'Invalid email address or password' })

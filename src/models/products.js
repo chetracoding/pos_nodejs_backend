@@ -34,12 +34,6 @@ const ProductScema = {
     type: Schema.Types.ObjectId,
     ref: 'categories',
   },
-  // product_customizes: [
-  //   {
-  //     type: Schema.Types.ObjectId,
-  //     ref: 'product_customizes'
-  //   },
-  // ],
   disabled: {
     type: Boolean,
     default: false,

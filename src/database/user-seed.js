@@ -3,7 +3,7 @@ import { ROLE_NAME } from '../constants/index.js'
 import models from '../models/index.js'
 import userService from '../services/user.js'
 
-const { Store, Category, Table } = models
+const { Store } = models
 
 export async function insertUsers() {
   console.log('-----------> Inserting users, please wait... <-----------')
@@ -79,43 +79,7 @@ export async function insertUsers() {
 
   await Promise.all(users.map((user) => userService.createUser(user)))
 
-  await Category.insertMany([
-    {
-      name: 'Pizza',
-      store: store1._id,
-    },
-    {
-      name: 'Noodle',
-      store: store1._id,
-    },
-    {
-      name: 'Drink',
-      store: store1._id,
-    },
-  ])
-
-  await Table.insertMany([
-    {
-      table_number: 'A1',
-      store: store1._id,
-    },
-    {
-      table_number: 'A2',
-      store: store1._id,
-    },
-    {
-      table_number: 'A3',
-      store: store1._id,
-    },
-    {
-      table_number: 'A4',
-      store: store1._id,
-    },
-    {
-      table_number: 'A5',
-      store: store1._id,
-    },
-  ])
-
   console.log('-----------> Users are inserted <-----------')
+
+  return { store1, store2 }
 }

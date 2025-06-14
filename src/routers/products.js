@@ -133,8 +133,6 @@ export default function initRoutes() {
         },
         'product_customizes.*.price': {
           notEmpty: true,
-          toInt: true,
-          isInt: true,
         },
       },
       { limitTo: ['params', 'body'] }
