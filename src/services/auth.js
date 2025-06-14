@@ -2,9 +2,9 @@ import models from '../models/index.js'
 import Jwt from 'jsonwebtoken'
 import bcrypt from 'bcryptjs'
 import { mailTransporter } from '../utils/mailer.js'
-import { validRole } from '../utils/role.js'
-import { snakeToCamel, getDefinedValues } from '../helpers/index.js'
-const { user, roles } = models
+
+const { User, UserStore, UserRole, RolePermission } = models
+
 export default {
   register,
   login,
@@ -13,7 +13,6 @@ export default {
   resetPwd,
   changePwd,
   mySelf,
-  getStaff,
   updateStaff,
   deleteStaff,
 }
@@ -26,11 +25,11 @@ async function register(req, res) {
     //     .send({ success: false, field: 'password', type: 'isNull' })
     // }
     const { first_name, last_name, email, gender, password, role_id } = req.body
-    const findRole = await roles.findById(role_id)
+    const findRole = await User.findById(role_id)
     if (findRole.name === 'admin' || findRole.name === 'restaurant_owner') {
       return res.status(400).send({ success: false, message: 'Bad request.' })
     }
-    const userByEmail = await user.find({ email: email })
+    const userByEmail = await User.find({ email: email })
     if (userByEmail.length > 0) {
       return res.status(409).send({ success: false, message: 'Bad request.' })
     }
@@ -45,7 +44,7 @@ async function register(req, res) {
       store_id:
         req.user.role_name === 'admin' ? req.body.store_id : req.user.store_id,
     }
-    const resUser = await user.create(params)
+    const resUser = await User.create(params)
     const token = Jwt.sign(
       {
         user_id: resUser.id,
@@ -80,44 +79,72 @@ async function register(req, res) {
 async function login(req, res) {
   try {
     const { email, password } = req.body
-    const resUser = await user
-      .findOne({ email: email })
-      .select('+password')
-      .populate({ path: 'store_id role_id' })
-    if (resUser && (await bcrypt.compare(password, resUser.password))) {
-      const { id, store_id, role_id } = resUser
-      const token = Jwt.sign(
-        {
-          user_id: id,
-          store_id: store_id.id,
-          role_id: role_id.id,
-          role_name: role_id.name,
-        },
-        'TOKEN-KEY',
-        {
-          expiresIn: '24h',
-        }
-      )
-      resUser.password = 'hidden'
-      const resObject = {
-        success: true,
-        user: resUser,
-        token,
-        message: 'Login is successful.',
-      }
-      return res.send(resObject)
+    const user = await User.findOne({ email: email }).select('+password')
+
+    if (!user && !(await bcrypt.compare(password, user.password))) {
+      return res
+        .status(404)
+        .send({ success: false, message: 'Invalid email address or password' })
     }
-    res.status(404).send({ success: false, message: 'Invalid credentials.' })
+
+    const { store } = await UserStore.findOne({
+      user: user._id,
+    }).populate('store')
+    if (!store) {
+      return res
+        .status(400)
+        .send({ success: false, message: "User doesn't has store" })
+    }
+
+    const { role } = await UserRole.findOne({
+      user: user.id,
+    }).populate('role')
+    if (!role) {
+      return res
+        .status(400)
+        .send({ success: false, message: "User doesn't has role" })
+    }
+
+    const permissions = await RolePermission.find({ role: role.id })
+      .select('-_id -role')
+      .populate({ path: 'permission', select: '-_id +name' })
+
+    const token = Jwt.sign(
+      {
+        user_id: user.id,
+        store_id: store.id,
+        role: role,
+      },
+      'TOKEN-KEY',
+      {
+        expiresIn: '24h',
+      }
+    )
+
+    const userData = user.toJSON()
+    delete userData.password
+
+    const data = {
+      success: true,
+      data: {
+        user: userData,
+        store,
+        role,
+        permissions,
+      },
+      token,
+      message: 'Login is successful.',
+    }
+
+    return res.send(data)
   } catch (error) {
-    res
-      .status(500)
-      .send({ success: false, message: 'Something wrong while logining.' })
+    throw error
   }
 }
 
 async function sendPwd(req, res) {
   const { email } = req.body
-  const resUser = await user.findOne({ email: email })
+  const resUser = await User.findOne({ email: email })
   if (!resUser)
     return res.status(404).send({ success: false, message: 'Invalid email.' })
 
@@ -183,7 +210,7 @@ async function resetPwd(req, res) {
     const { token, password } = req.body
     const decode = Jwt.verify(token, 'EMAIL-KEY')
     const encryptedPassword = await bcrypt.hash(password, 10)
-    await user.findOneAndUpdate(
+    await User.findOneAndUpdate(
       { email: decode.email },
       { password: encryptedPassword }
     )
@@ -199,10 +226,10 @@ async function resetPwd(req, res) {
 async function changePwd(req, res) {
   try {
     const { old_pwd, new_pwd } = req.body
-    const resUser = await user.findById(req.user.user_id).select('+password')
+    const resUser = await User.findById(req.user.user_id).select('+password')
     if (await bcrypt.compare(old_pwd, resUser.password)) {
       const encryptedPassword = await bcrypt.hash(new_pwd, 10)
-      await user.findByIdAndUpdate(req.user.user_id, {
+      await User.findByIdAndUpdate(req.user.user_id, {
         password: encryptedPassword,
       })
       return res.send({
@@ -223,30 +250,44 @@ async function changePwd(req, res) {
 }
 
 async function mySelf(req, res) {
-  const resUser = await user
-    .findById(req.user.user_id)
-    .populate({ path: 'role_id', select: '-createdAt -updatedAt -users' })
-    .populate({ path: 'store_id', select: '-createdAt -updatedAt' })
-  res.send({ success: true, data: resUser })
-}
+  const user = await User.findById(req.user.user_id)
+  if (!user) {
+    return res.status(403).send({ success: false, message: '403 Forbidden.' })
+  }
 
-async function getStaff(req, res) {
-  const resStaff = await user
-    .find({
-      store_id: req.user.store_id,
-    })
-    .populate({ path: 'role_id', select: '-createdAt -updatedA -users' })
-  res.send({ success: true, data: resStaff })
+  const { store } = await UserStore.findOne({
+    user: user._id,
+  }).populate('store')
+  if (!store) {
+    return res
+      .status(400)
+      .send({ success: false, message: "User doesn't has store" })
+  }
+
+  const { role } = await UserRole.findOne({
+    user: user.id,
+  }).populate('role')
+  if (!role) {
+    return res
+      .status(400)
+      .send({ success: false, message: "User doesn't has role" })
+  }
+
+  const permissions = await RolePermission.find({ role: role.id })
+    .select('-_id -role')
+    .populate({ path: 'permission', select: '-_id +name' })
+
+  res.send({ success: true, data: { user, store, role, permissions } })
 }
 
 async function updateStaff(req, res) {
-  const findUser = await user.findById(req.params.id)
+  const findUser = await User.findById(req.params.id)
   if (!findUser)
     return res.status(404).send({ success: false, message: `Not Found.` })
 
   const { first_name, last_name, email, gender, image, password, role_id } =
     req.body
-  const userByEmail = await user.find({ email: email })
+  const userByEmail = await User.find({ email: email })
 
   if (userByEmail.length > 0) {
     if (userByEmail[0].id !== req.params.id)
@@ -256,10 +297,11 @@ async function updateStaff(req, res) {
   if (password) userObj.password = await bcrypt.hash(password, 10)
   if (image) userObj.image = image
   if (role_id) userObj.role_id = role_id
-  const resUser = await user.findByIdAndUpdate(req.params.id, userObj)
+  const resUser = await User.findByIdAndUpdate(req.params.id, userObj)
   Object.keys(userObj).forEach((key) => {
     resUser[key] = userObj[key]
   })
+
   res.send({
     success: true,
     message: 'User updated successful.',
@@ -268,11 +310,10 @@ async function updateStaff(req, res) {
 }
 
 async function deleteStaff(req, res) {
-  const resData = await user.findByIdAndDelete(req.params.id)
+  const resData = await User.findByIdAndDelete(req.params.id)
   if (!resData) {
     return res.status(404).send({ success: false, message: `Not Found.` })
   }
-  return res
-    .status(200)
-    .send({ success: true, message: `User deleted successful.` })
+
+  res.status(200).send({ success: true, message: `User deleted successful.` })
 }

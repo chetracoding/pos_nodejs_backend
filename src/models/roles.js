@@ -3,20 +3,20 @@ import { Schema, model } from 'mongoose'
 const RoleScema = {
   name: {
     type: String,
-    maxlength: 20,
+    maxlength: 50,
     require: true,
   },
-  disabled: {
-    type: Boolean,
-    default: false,
-    select: false
+  label: {
+    type: String,
+    maxlength: 50,
+    require: true,
   },
 }
 
 const Role = model(
   'roles',
   new Schema(RoleScema, {
-    timestamps: true,
+    timestamps: false,
     versionKey: false,
   })
 )

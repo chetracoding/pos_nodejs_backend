@@ -3,46 +3,47 @@ import { Schema, model } from 'mongoose'
 const ProductScema = {
   name: {
     type: String,
-    maxlength: 250,
+    maxlength: 255,
     require: true,
   },
   product_code: {
     type: String,
-    maxlength: 50,
+    maxlength: 255,
     require: true,
   },
   description: {
     type: String,
-    maxlength: 250,
+    maxlength: 255,
     require: false,
   },
   image: {
     type: String,
+    maxlength: 255,
     require: true,
   },
   is_active: {
     type: Boolean,
     require: true,
-    default: false
+    default: true,
   },
-  store_id: {
+  store: {
     type: Schema.Types.ObjectId,
     ref: 'stores',
   },
-  category_id: {
+  category: {
     type: Schema.Types.ObjectId,
     ref: 'categories',
   },
-  product_customizes: [
-    {
-      type: Schema.Types.ObjectId,
-      ref: 'product_customizes'
-    },
-  ],
+  // product_customizes: [
+  //   {
+  //     type: Schema.Types.ObjectId,
+  //     ref: 'product_customizes'
+  //   },
+  // ],
   disabled: {
     type: Boolean,
     default: false,
-    select: false
+    select: false,
   },
 }
 

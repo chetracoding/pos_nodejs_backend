@@ -1,37 +1,31 @@
 import { Schema, model } from 'mongoose'
 
-const StoreScema = {
+const scema = {
   name: {
     type: String,
-    maxlength: 250,
+    maxlength: 255,
     require: true,
   },
   street: {
     type: String,
-    maxlength: 250,
-    require: true,
+    maxlength: 255,
+    require: false,
   },
   city: {
     type: String,
-    maxlength: 250,
-    require: true,
+    maxlength: 255,
+    require: false,
   },
-  users: [
-    {
-      type: Schema.Types.ObjectId,
-      ref: 'users',
-      select: false
-    },
-  ],
   disabled: {
     type: Boolean,
     default: false,
-    select: false
+    select: false,
   },
 }
+
 const Store = model(
   'stores',
-  new Schema(StoreScema, {
+  new Schema(scema, {
     timestamps: true,
     versionKey: false,
   })

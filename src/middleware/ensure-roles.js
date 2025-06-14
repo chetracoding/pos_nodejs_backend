@@ -1,19 +1,31 @@
-import { readFileSync } from 'node:fs'
-import * as path from 'path'
+import models from '../models/index.js'
 
-export default function ensurePermissions(roles) {
-  return function verifyRoles(req, res, next) {
-    const permissionsConfig = JSON.parse(
-      readFileSync(path.resolve(`${process.cwd()}/config/permissions.json`))
-    )
-    for (const key of Object.keys(roles)) {
-      if (!permissionsConfig[key]) {
-        throw new Error('Invalid value for using method ensurePermissions().')
-      }
+const { RolePermission } = models
+
+export default function ensurePermissions(requirements) {
+  return async function verifyRoles(req, res, next) {
+    const permissions =
+      (await RolePermission.find({ role: req.user.role._id })
+        .select('-_id -role')
+        .populate({
+          path: 'permission',
+          select: '-_id +name',
+        })) || []
+
+    if (userCan({ permissions, requirements })) {
+      return next()
     }
-    const role = req.user.role_name.toUpperCase()
-    if (!roles[role])
-      return res.status(403).send({ success: false, message: '403 Forbidden.' })
-    next()
+
+    res.status(403).send({ success: false, message: '403 Forbidden.' })
   }
+}
+
+function userCan({ permissions, requirements }) {
+  const permissionName = Object.keys(requirements)[0]
+  const permission = permissions.find(
+    ({ permission }) => permission.name == permissionName
+  )
+  if (!permission) return false
+
+  return permission[requirements[permissionName]]
 }

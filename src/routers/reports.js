@@ -8,7 +8,7 @@ export default function initRoutes() {
 
   router.get(
     '/money',
-    ensurePermissions({ RESTAURANT_OWNER: 'GET' }),
+    // ensurePermissions({ RESTAURANT_OWNER: 'GET' }),
     ensureFields(
       {
         year: {
@@ -23,7 +23,7 @@ export default function initRoutes() {
   )
   router.get(
     '/product',
-    ensurePermissions({ RESTAURANT_OWNER: 'GET' }),
+    // ensurePermissions({ RESTAURANT_OWNER: 'GET' }),
     ensureFields(
       {
         month: {

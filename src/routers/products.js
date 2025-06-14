@@ -8,13 +8,13 @@ export default function initRoutes() {
 
   router.get(
     '/',
-    ensurePermissions({ RESTAURANT_OWNER: 'GET', WAITER: 'GET' }),
+    // ensurePermissions({ RESTAURANT_OWNER: 'GET', WAITER: 'GET' }),
     productService.getAll
   )
 
   router.get(
     '/:id',
-    ensurePermissions({ RESTAURANT_OWNER: 'GET', WAITER: 'GET' }),
+    // ensurePermissions({ RESTAURANT_OWNER: 'GET', WAITER: 'GET' }),
     ensureFields(
       {
         id: {
@@ -31,7 +31,7 @@ export default function initRoutes() {
 
   router.post(
     '/',
-    ensurePermissions({ RESTAURANT_OWNER: 'POST' }),
+    // ensurePermissions({ RESTAURANT_OWNER: 'POST' }),
     ensureFields(
       {
         category_id: {
@@ -72,8 +72,6 @@ export default function initRoutes() {
         },
         'product_customizes.*.price': {
           notEmpty: true,
-          toInt: true,
-          isInt: true,
         },
       },
       { limitTo: ['body'] }
@@ -83,7 +81,7 @@ export default function initRoutes() {
 
   router.put(
     '/:id',
-    ensurePermissions({ RESTAURANT_OWNER: 'PUT' }),
+    // ensurePermissions({ RESTAURANT_OWNER: 'PUT' }),
     ensureFields(
       {
         id: {
@@ -146,7 +144,7 @@ export default function initRoutes() {
 
   router.delete(
     '/:id',
-    ensurePermissions({ RESTAURANT_OWNER: 'DELETE' }),
+    // ensurePermissions({ RESTAURANT_OWNER: 'DELETE' }),
     ensureFields(
       {
         id: {

@@ -1,14 +1,16 @@
 import { Router } from 'express'
 import authService from '../services/auth.js'
+import userService from '../services/user.js'
 import ensureFields from '../middleware/ensure-fields.js'
 import ensurePermissions from '../middleware/ensure-roles.js'
 
 export default function initRoutes(middleware) {
   const router = Router()
+
   router.post(
     '/register',
     middleware,
-    ensurePermissions({ RESTAURANT_OWNER: 'POST' }),
+    // ensurePermissions({ RESTAURANT_OWNER: 'POST' }),
     ensureFields(
       {
         first_name: {
@@ -45,6 +47,7 @@ export default function initRoutes(middleware) {
     ),
     authService.register
   )
+
   router.post(
     '/login',
     ensureFields(
@@ -61,6 +64,7 @@ export default function initRoutes(middleware) {
     ),
     authService.login
   )
+
   router.post(
     '/send-pwd',
     ensureFields(
@@ -86,6 +90,7 @@ export default function initRoutes(middleware) {
     ),
     authService.checkPwd
   )
+
   router.post(
     '/reset-pwd',
     ensureFields(
@@ -101,6 +106,7 @@ export default function initRoutes(middleware) {
     ),
     authService.resetPwd
   )
+
   router.post(
     '/change-pwd',
     middleware,
@@ -117,13 +123,16 @@ export default function initRoutes(middleware) {
     ),
     authService.changePwd
   )
+
   router.get('/user', middleware, authService.mySelf)
+
   router.get(
     '/staff',
     middleware,
-    ensurePermissions({ RESTAURANT_OWNER: 'GET' }),
-    authService.getStaff
+    // ensurePermissions({ RESTAURANT_OWNER: 'GET' }),
+    userService.getUsers
   )
+
   router.put(
     '/user/:id',
     middleware,
@@ -163,10 +172,11 @@ export default function initRoutes(middleware) {
     ),
     authService.updateStaff
   )
+
   router.delete(
     '/staff/:id',
     middleware,
-    ensurePermissions({ RESTAURANT_OWNER: 'DELETE' }),
+    // ensurePermissions({ RESTAURANT_OWNER: 'DELETE' }),
     ensureFields(
       {
         id: {
@@ -178,5 +188,6 @@ export default function initRoutes(middleware) {
     ),
     authService.deleteStaff
   )
+
   return router
 }

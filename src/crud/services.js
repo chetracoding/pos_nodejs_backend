@@ -1,7 +1,10 @@
 import { model, startSession } from 'mongoose'
 import models from '../models/index.js'
 import { validRole } from '../utils/role.js'
-const { products } = models
+import { PROD_MODE } from '../constants/index.js'
+import { ROLE_NAME } from '../constants/index.js'
+
+const { Product } = models
 
 export default function initServices(tableName, config) {
   const models = model(tableName)
@@ -12,10 +15,9 @@ export default function initServices(tableName, config) {
     const data =
       tableName === 'roles'
         ? await models.find({
-            name: { $nin: ['admin', 'restaurant_owner'] },
-            disabled: false,
+            name: { $nin: [ROLE_NAME.SUPER_ADMIN] },
           })
-        : await models.find({ store_id, disabled: false }).select('-store_id')
+        : await models.find({ store: store_id }).select('-store')
 
     res.send({
       success: true,
@@ -52,7 +54,7 @@ export default function initServices(tableName, config) {
 
       const payload = req.body
       payload.store_id = req.user.store_id
-      await models.create([payload], { session })
+      await models.create([payload], { ...(PROD_MODE && { session }) })
 
       await session.commitTransaction()
       res.send({
@@ -79,7 +81,9 @@ export default function initServices(tableName, config) {
         return res.status(400).send({ success: false, message: 'Bad request.' })
       }
 
-      const resData = await models.findByIdAndUpdate(id, req.body, { session })
+      const resData = await models.findByIdAndUpdate(id, req.body, {
+        ...(PROD_MODE && { session }),
+      })
       if (!resData) {
         return res.status(404).send({ success: false, message: `Not Found.` })
       }
@@ -114,17 +118,17 @@ export default function initServices(tableName, config) {
         {
           disabled: true,
         },
-        { session }
+        { ...(PROD_MODE && { session }) }
       )
       if (!resData) {
         return res.status(404).send({ success: false, message: `Not Found.` })
       }
 
       if (tableName === 'categories') {
-        await products.updateMany(
+        await Product.updateMany(
           { category_id: id },
           { disabled: true },
-          { session }
+          { ...(PROD_MODE && { session }) }
         )
       }
 

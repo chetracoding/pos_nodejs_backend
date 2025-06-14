@@ -7,12 +7,13 @@ const ProductCustomizeScema = {
     require: true,
   },
   price: {
-    type: Number,
+    type: Schema.Types.Double,
     require: true,
   },
-  product_id: {
+  product: {
     type: Schema.Types.ObjectId,
     ref: 'products',
+    require: true,
   },
   disabled: {
     type: Boolean,

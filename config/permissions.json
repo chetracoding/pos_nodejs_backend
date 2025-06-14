@@ -1,14 +1,58 @@
 {
-  "RESTAURANT_OWNER": {
-    "describe": "full-access"
+  "SUPER_ADMIN": {
+    "permissions": {
+      "DASHBOARD": ["ALL"],
+      "USER": ["ALL"],
+      "STORE": ["ALL"],
+      "PRODUCT": ["ALL"],
+      "CATEGORY": ["ALL"],
+      "TABLE": ["ALL"],
+      "ORDER": ["ALL"],
+      "RECIPT": ["ALL"],
+      "COOK": ["ALL"],
+      "SALE": ["ALL"],
+      "MONEY": ["ALL"]
+    }
   },
-  "WAITER": {
-    "describe": "limit-access"
+  "ADMIN": {
+    "permissions": {
+      "DASHBOARD": ["ALL"],
+      "USER": ["ALL"],
+      "STORE": ["ALL"],
+      "PRODUCT": ["ALL"],
+      "CATEGORY": ["ALL"],
+      "TABLE": ["ALL"],
+      "ORDER": ["ALL"],
+      "RECIPT": ["ALL"],
+      "COOK": ["ALL"],
+      "SALE": ["ALL"],
+      "MONEY": ["ALL"]
+    }
   },
   "CASHIER": {
-    "describe": "limit-access"
+    "permissions": {
+      "STORE": ["read"],
+      "PRODUCT": ["ALL"],
+      "CATEGORY": ["ALL"],
+      "TABLE": ["ALL"],
+      "ORDER": ["read", "update"],
+      "RECIPT": ["ALL"]
+    }
   },
   "CHEF": {
-    "describe": "limit-access"
+    "permissions": {
+      "STORE": ["read"],
+      "ORDER": ["read", "update"],
+      "COOK": ["ALL"]
+    }
+  },
+  "WAITER": {
+    "permissions": {
+      "STORE": ["read"],
+      "PRODUCT": ["read"],
+      "CATEGORY": ["read"],
+      "TABLE": ["read"],
+      "ORDER": ["read", "create", "update"]
+    }
   }
 }

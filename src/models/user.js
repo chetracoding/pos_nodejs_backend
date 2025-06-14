@@ -20,7 +20,7 @@ const UserScema = {
   password: {
     type: String,
     require: true,
-    select: false
+    select: false,
   },
   gender: {
     type: String,
@@ -31,14 +31,27 @@ const UserScema = {
     type: String,
     require: false,
   },
-  store_id: {
-    type: Schema.Types.ObjectId,
-    ref: 'stores',
+  disabled: {
+    type: Boolean,
+    default: false,
+    select: false,
   },
-  role_id: {
-    type: Schema.Types.ObjectId,
-    ref: 'roles',
+  createdDate: {
+    type: Date,
+    alias: 'created_at',
   },
+  updatedAt: {
+    type: Date,
+    alias: 'updated_at',
+  },
+  // store_id: {
+  //   type: Schema.Types.ObjectId,
+  //   ref: 'stores',
+  // },
+  // role_id: {
+  //   type: Schema.Types.ObjectId,
+  //   ref: 'roles',
+  // },
   // posts: [
   //   {
   //     type: Schema.Types.ObjectId,
@@ -52,7 +65,8 @@ const User = model(
   new Schema(UserScema, {
     timestamps: true,
     versionKey: false,
-    createdAt: 'date_creation',
+    // createdAt: 'created_at',
+    // updatedAt: 'updated_at',
   })
 )
 

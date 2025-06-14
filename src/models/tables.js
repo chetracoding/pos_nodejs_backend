@@ -6,14 +6,14 @@ const TableScema = {
     maxlength: 20,
     require: true,
   },
-  store_id: {
+  store: {
     type: Schema.Types.ObjectId,
     ref: 'stores',
   },
   disabled: {
     type: Boolean,
     default: false,
-    select: false
+    select: false,
   },
 }
 

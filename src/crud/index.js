@@ -4,7 +4,7 @@ import initRoutes from './routes.js'
 import middleware from '../middleware/auth.js'
 
 export default async function initCrud(app) {
-  console.log('-----------> Initializing CRUD, please wait <-----------')
+  console.log('-----------> Initializing CRUD, please wait... <-----------')
   const crudConfig = JSON.parse(
     readFileSync(path.resolve(`${process.cwd()}/config/crud.json`))
   )

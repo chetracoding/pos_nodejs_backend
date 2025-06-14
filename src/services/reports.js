@@ -1,6 +1,7 @@
-import models from '../models/index.js'
 import mongoose from 'mongoose'
-const { orders } = models
+import models from '../models/index.js'
+
+const { Order } = models
 const ObjectId = mongoose.Types.ObjectId
 
 export default {
@@ -9,7 +10,7 @@ export default {
 }
 
 async function moneyReps(req, res) {
-  const resData = await orders.aggregate([
+  const resData = await Order.aggregate([
     {
       $match: {
         $and: [
@@ -70,6 +71,7 @@ async function moneyReps(req, res) {
       },
     },
   ])
+
   res.send({
     success: true,
     message: `Get money reports successful.`,
@@ -78,7 +80,7 @@ async function moneyReps(req, res) {
 }
 
 async function productReps(req, res) {
-  const resData = await orders.aggregate([
+  const resData = await Order.aggregate([
     {
       $match: {
         $and: [
@@ -158,6 +160,7 @@ async function productReps(req, res) {
       },
     },
   ])
+
   res.send({
     success: true,
     message: `Get product reports successful.`,

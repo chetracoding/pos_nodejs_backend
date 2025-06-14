@@ -5,15 +5,12 @@ import ensurePermissions from '../middleware/ensure-roles.js'
 
 export default function initRoutes() {
   const router = new Router()
-  // router.get('/schema', services.getSchema)
-  router.get(
-    '/',
-    ensurePermissions({ CASHIER: 'GET', CHEF: 'GET' }),
-    orderService.filter
-  )
+
+  router.get('/', ensurePermissions({ ORDER: 'read' }), orderService.filter)
+
   router.get(
     '/:id',
-    ensurePermissions({ CASHIER: 'GET', CHEF: 'GET' }),
+    // ensurePermissions({ CASHIER: 'GET', CHEF: 'GET' }),
     ensureFields(
       {
         id: {
@@ -27,7 +24,7 @@ export default function initRoutes() {
   )
   router.post(
     '/',
-    ensurePermissions({ WAITER: 'POST' }),
+    // ensurePermissions({ WAITER: 'POST' }),
     ensureFields(
       {
         table_id: {
@@ -60,7 +57,7 @@ export default function initRoutes() {
   )
   router.put(
     '/:id',
-    ensurePermissions({ CASHIER: 'PUT', CHEF: 'PUT' }),
+    // ensurePermissions({ CASHIER: 'PUT', CHEF: 'PUT' }),
     ensureFields(
       {
         id: {
@@ -82,6 +79,6 @@ export default function initRoutes() {
     ),
     orderService.update
   )
-  // router.delete('/:id', orderService.destroy)
+
   return router
 }
