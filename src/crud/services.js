@@ -3,6 +3,7 @@ import models from '../models/index.js'
 import { validRole } from '../utils/role.js'
 import { PROD_MODE } from '../constants/index.js'
 import { ROLE_NAME } from '../constants/index.js'
+import { paginate } from '../utils/paginate.js'
 
 const { Product } = models
 
@@ -11,18 +12,28 @@ export default function initServices(tableName, config) {
   return { create, getAll, getById, update, destroy }
   async function getAll(req, res) {
     const { store_id } = req.user
+    const { sort, filter } = req.query
+    const { skip, limit } = paginate(req.query)
+    const filters = {
+      disabled: false,
+      ...(tableName === 'roles' && { name: { $nin: [ROLE_NAME.SUPER_ADMIN] } }),
+      ...(tableName !== 'roles' && { store: store_id }),
+      ...(filter && { ...filter }),
+    }
 
-    const data =
-      tableName === 'roles'
-        ? await models.find({
-            name: { $nin: [ROLE_NAME.SUPER_ADMIN] },
-          })
-        : await models.find({ store: store_id }).select('-store')
+    const [rows, count] = await Promise.all([
+      models
+        .find(filters)
+        .skip(skip)
+        .limit(limit)
+        .sort(sort || {}),
+      models.countDocuments(filters),
+    ])
 
     res.send({
       success: true,
       message: `Get all ${tableName} successful.`,
-      data,
+      data: { count, rows },
     })
   }
 
